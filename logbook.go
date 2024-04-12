@@ -93,7 +93,6 @@ func main() {
 		addCmd.Parse(os.Args[2:])
 		command, id := parseHistoryItem(*cmdName)
 		lastEntry := logbookRetrieveLastEntry(db)
-		fmt.Println(*exitCode)
 		if !(id == lastEntry.historyId && command == lastEntry.commandName) {
 			_, err = db.Exec("INSERT INTO command (command_name, history_id, exit_code, uuid) VALUES (?, ?, ?, ?)", command, id, *exitCode, *uuid)
 			if err != nil {
