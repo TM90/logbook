@@ -26,22 +26,25 @@ type logbookEntry struct {
 	execTime    time.Time
 }
 
-func logbookRetrieveLastEntry(db *sql.DB) logbookEntry {
-	var result logbookEntry
+func (l logbookEntry) logbookRetrieveLastEntry(db *sql.DB) logbookEntry {
 	row := db.QueryRow("SELECT * FROM command ORDER BY ID DESC LIMIT 1")
-	err := row.Scan(&result.dbId, &result.commandName, &result.historyId, &result.exitCode, &result.uuid, &result.execTime)
+	err := row.Scan(&l.dbId, &l.commandName, &l.historyId, &l.exitCode, &l.uuid, &l.execTime)
 	if err != nil {
-		result.historyId = -1
-		result.commandName = ""
+		l.historyId = -1
+		l.commandName = ""
 	}
-	return result
+	return l
+}
 
+func (l logbookEntry) parseRow(rows *sql.Rows) logbookEntry {
+	rows.Scan(&l.dbId, &l.commandName, &l.historyId, &l.exitCode, &l.uuid, &l.execTime)
+	return l
 }
 
 func printLogbookRows(rows *sql.Rows) {
 	for rows.Next() {
 		var result logbookEntry
-		rows.Scan(&result.dbId, &result.commandName, &result.historyId, &result.exitCode, &result.uuid, &result.execTime)
+		result = result.parseRow(rows)
 		fmt.Printf("%s\n", result.commandName)
 	}
 }
@@ -92,7 +95,8 @@ func main() {
 		}
 		addCmd.Parse(os.Args[2:])
 		command, id := parseHistoryItem(*cmdName)
-		lastEntry := logbookRetrieveLastEntry(db)
+		var lastEntry logbookEntry
+		lastEntry = lastEntry.logbookRetrieveLastEntry(db)
 		if !(id == lastEntry.historyId && command == lastEntry.commandName) {
 			_, err = db.Exec("INSERT INTO command (command_name, history_id, exit_code, uuid) VALUES (?, ?, ?, ?)", command, id, *exitCode, *uuid)
 			if err != nil {
