@@ -83,6 +83,7 @@ func main() {
 	case "init":
 		os.MkdirAll(os.Getenv("HOME")+"/.logbook", 0775)
 		os.Create(os.Getenv("HOME") + "/.logbook/logbook.sql")
+		os.Chmod(os.Getenv("HOME")+"/.logbook/logbook.sql", 0600)
 		db, err := logbookOpen()
 		if err != nil {
 			fmt.Println(err.Error())
