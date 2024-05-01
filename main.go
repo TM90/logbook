@@ -19,6 +19,7 @@ func parseHistoryItem(raw_line string) (string, int) {
 func main() {
 	_ = flag.NewFlagSet("init", flag.ExitOnError)
 	addCmd := flag.NewFlagSet("add", flag.ExitOnError)
+	_ = flag.NewFlagSet("tui", flag.ExitOnError)
 	cmdName := addCmd.String("command", "", "command")
 	exitCode := addCmd.Int("exit-code", 0, "exit-code")
 	uuid := addCmd.String("uuid", "", "uuid")
@@ -84,6 +85,8 @@ func main() {
 		}
 		db.Close()
 
+	case "tui":
+		runTuiBrowser()
 	default:
 		fmt.Println("Expected a valid subcommand!")
 		os.Exit(1)
