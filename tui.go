@@ -8,13 +8,29 @@ import (
 )
 
 type model struct {
-	choices []string
+	logbook []logbookEntry
 	cursor  int
 }
 
 func initialModel() model {
+	db, err := dbOpen()
+	if err != nil {
+		fmt.Println(err.Error())
+		os.Exit(1)
+	}
+	rows, err := db.Query("SELECT * FROM command GROUP BY command_name ORDER BY id DESC LIMIT 0,20")
+	if err != nil {
+		fmt.Println(err.Error())
+		os.Exit(1)
+	}
+	db.Close()
+	logbook := initLogBook(rows)
+	entries := []logbookEntry{}
+	for logbook.Next() {
+		entries = append(entries, logbook.Value())
+	}
 	return model{
-		choices: []string{"a", "b", "c"},
+		logbook: entries,
 	}
 }
 
@@ -33,23 +49,24 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				m.cursor--
 			}
 		case "down", "j":
-			if m.cursor < len(m.choices)-1 {
+			if m.cursor < 20 {
 				m.cursor++
 			}
 		}
 
 	}
+
 	return m, nil
 }
 
 func (m model) View() string {
 	s := "Results: \n\n"
-	for i, choice := range m.choices {
+	for i, entry := range m.logbook {
 		cursor := " "
 		if m.cursor == i {
 			cursor = ">"
 		}
-		s += fmt.Sprintf("%s %s\n", cursor, choice)
+		s += fmt.Sprintf("%s %s\n", cursor, entry.commandName)
 	}
 	s += "\nPress q to quit\n"
 	return s
