@@ -15,25 +15,26 @@ type model struct {
 }
 
 func initialModel() model {
+	return model{}
+}
+
+func updatePage(m model) model {
 	db, err := dbOpen()
 	if err != nil {
 		fmt.Println(err.Error())
 		os.Exit(1)
 	}
-	rows, err := db.Query("SELECT * FROM command GROUP BY command_name ORDER BY id DESC LIMIT 0,20")
+	rows, err := retrieveUniqueCommandNameRows(db, m.logbookDisplaySize, m.logbookDisplaySize*m.page)
 	if err != nil {
 		fmt.Println(err.Error())
 		os.Exit(1)
 	}
-	db.Close()
-	logbook := initLogBook(rows)
-	entries := []logbookEntry{}
-	for logbook.Next() {
-		entries = append(entries, logbook.Value())
+	m.logbook = logBookToEntryList(initLogBook(rows))
+	print(m.logbook)
+	if m.cursor > m.logbookDisplaySize {
+		m.cursor = m.logbookDisplaySize - 1
 	}
-	return model{
-		logbook: entries,
-	}
+	return m
 }
 
 func (m model) Init() tea.Cmd {
@@ -45,26 +46,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	case tea.WindowSizeMsg:
 		m.logbookDisplaySize = msg.Height - 5
-		db, err := dbOpen()
-		if err != nil {
-			fmt.Println(err.Error())
-			os.Exit(1)
-		}
-		rows, err := db.Query(fmt.Sprintf("SELECT * FROM command GROUP BY command_name ORDER BY id DESC LIMIT 0,%d", m.logbookDisplaySize))
-		if err != nil {
-			fmt.Println(err.Error())
-			os.Exit(1)
-		}
-		db.Close()
-		logbook := initLogBook(rows)
-		entries := []logbookEntry{}
-		for logbook.Next() {
-			entries = append(entries, logbook.Value())
-		}
-		m.logbook = entries
-		if m.cursor > m.logbookDisplaySize {
-			m.cursor = m.logbookDisplaySize - 1
-		}
+		m = updatePage(m)
 	case tea.KeyMsg:
 		switch msg.String() {
 		case "ctrl+c", "q":
@@ -80,10 +62,13 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case "left":
 			if m.page > 0 {
 				m.page--
+				m = updatePage(m)
 			}
 		case "right":
 			m.page++
+			m = updatePage(m)
 		}
+
 	}
 
 	return m, nil

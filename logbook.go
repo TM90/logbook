@@ -52,3 +52,11 @@ func initLogBook(rows *sql.Rows) logBook {
 func (l logBook) String() string {
 	return l.Value().commandName
 }
+
+func logBookToEntryList(l logBook) []logbookEntry {
+	entries := []logbookEntry{}
+	for l.Next() {
+		entries = append(entries, l.Value())
+	}
+	return entries
+}
