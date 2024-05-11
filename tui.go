@@ -15,26 +15,19 @@ type model struct {
 }
 
 func initialModel() model {
-	return model{}
-}
-
-func updatePage(m model) model {
 	db, err := dbOpen()
 	if err != nil {
 		fmt.Println(err.Error())
 		os.Exit(1)
 	}
-	rows, err := retrieveUniqueCommandNameRows(db, m.logbookDisplaySize, m.logbookDisplaySize*m.page)
+	rows, err := retrieveUniqueCommandNameRows(db)
 	if err != nil {
 		fmt.Println(err.Error())
 		os.Exit(1)
 	}
-	m.logbook = logBookToEntryList(initLogBook(rows))
-	print(m.logbook)
-	if m.cursor > m.logbookDisplaySize {
-		m.cursor = m.logbookDisplaySize - 1
-	}
-	return m
+	logbook := logBookToEntryList(initLogBook(rows))
+
+	return model{logbook: logbook}
 }
 
 func (m model) Init() tea.Cmd {
@@ -46,7 +39,6 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	case tea.WindowSizeMsg:
 		m.logbookDisplaySize = msg.Height - 5
-		m = updatePage(m)
 	case tea.KeyMsg:
 		switch msg.String() {
 		case "ctrl+c", "q":
@@ -62,11 +54,9 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case "left":
 			if m.page > 0 {
 				m.page--
-				m = updatePage(m)
 			}
 		case "right":
 			m.page++
-			m = updatePage(m)
 		}
 
 	}
@@ -76,7 +66,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 func (m model) View() string {
 	s := fmt.Sprintf("Results %d: \n\n", m.page)
-	for i, entry := range m.logbook {
+	for i, entry := range m.logbook[m.logbookDisplaySize*m.page : m.logbookDisplaySize*(m.page+1)] {
 		cursor := " "
 		if m.cursor == i {
 			cursor = ">"

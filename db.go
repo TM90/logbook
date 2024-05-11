@@ -2,7 +2,6 @@ package main
 
 import (
 	"database/sql"
-	"fmt"
 	"os"
 )
 
@@ -11,8 +10,8 @@ func dbOpen() (*sql.DB, error) {
 	return db, err
 }
 
-func retrieveUniqueCommandNameRows(db *sql.DB, limit, offset int) (*sql.Rows, error) {
-	rows, err := db.Query(fmt.Sprintf("SELECT * FROM command GROUP BY command_name ORDER BY id DESC LIMIT %d OFFSET %d", limit, offset))
+func retrieveUniqueCommandNameRows(db *sql.DB) (*sql.Rows, error) {
+	rows, err := db.Query("SELECT * FROM command GROUP BY command_name ORDER BY id DESC")
 	db.Close()
 	return rows, err
 }
