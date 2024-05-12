@@ -49,14 +49,21 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			}
 		case "down":
 			if m.cursor < m.logbookDisplaySize-1 {
-				m.cursor++
+				if len(m.logbook)-m.logbookDisplaySize*m.page-1 != m.cursor {
+					m.cursor++
+				}
 			}
 		case "left":
 			if m.page > 0 {
 				m.page--
 			}
 		case "right":
-			m.page++
+			if len(m.logbook)-m.logbookDisplaySize*(m.page+1) > 0 {
+				m.page++
+			}
+			if len(m.logbook)-m.logbookDisplaySize*m.page < m.cursor {
+				m.cursor = len(m.logbook) - (m.logbookDisplaySize * m.page) - 1
+			}
 		}
 
 	}
@@ -66,12 +73,21 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 func (m model) View() string {
 	s := fmt.Sprintf("Results %d: \n\n", m.page)
-	for i, entry := range m.logbook[m.logbookDisplaySize*m.page : m.logbookDisplaySize*(m.page+1)] {
+	commandSliceLen := m.logbookDisplaySize
+	if len(m.logbook)-m.logbookDisplaySize*m.page < m.logbookDisplaySize {
+		commandSliceLen = len(m.logbook) - m.logbookDisplaySize*m.page
+	}
+	logbookPage := m.logbook[m.logbookDisplaySize*m.page : m.logbookDisplaySize*(m.page+1)]
+	for i := 0; i < commandSliceLen; i++ {
+
 		cursor := " "
 		if m.cursor == i {
 			cursor = ">"
 		}
-		s += fmt.Sprintf("%s %s\n", cursor, entry.commandName)
+		s += fmt.Sprintf("%s %s\n", cursor, logbookPage[i].commandName)
+	}
+	for i := 0; i < m.logbookDisplaySize-commandSliceLen; i++ {
+		s += "\n"
 	}
 	s += "\nPress q to quit\n"
 	return s
