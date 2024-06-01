@@ -12,6 +12,7 @@ type model struct {
 	cursor             int
 	logbookDisplaySize int
 	page               int
+	searchString       string
 }
 
 func initialModel() model {
@@ -38,10 +39,10 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 
 	case tea.WindowSizeMsg:
-		m.logbookDisplaySize = msg.Height - 5
+		m.logbookDisplaySize = msg.Height - 6
 	case tea.KeyMsg:
 		switch msg.String() {
-		case "ctrl+c", "q":
+		case "ctrl+c":
 			return m, tea.Quit
 		case "up":
 			if m.cursor > 0 {
@@ -63,6 +64,14 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			}
 			if len(m.logbook)-m.logbookDisplaySize*m.page < m.cursor {
 				m.cursor = len(m.logbook) - (m.logbookDisplaySize * m.page) - 1
+			}
+		case "delete", "backspace":
+			if len(m.searchString) > 0 {
+				m.searchString = m.searchString[:len(m.searchString)-1]
+			}
+		default:
+			if len(msg.String()) == 1 {
+				m.searchString += msg.String()
 			}
 		}
 
@@ -89,7 +98,8 @@ func (m model) View() string {
 	for i := 0; i < m.logbookDisplaySize-commandSliceLen; i++ {
 		s += "\n"
 	}
-	s += "\nPress q to quit\n"
+	s += m.searchString + "\n"
+	s += "\nPress ctrl+c to quit\n"
 	return s
 }
 
