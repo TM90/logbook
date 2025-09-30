@@ -2,7 +2,7 @@ function __logbook_hook__() {
   if [ "$XDG_SESSION_TYPE" = "wayland" ]; then
     wl-copy "$(logbook raw_query --query "SELECT id, command_name, history_id, exit_code, uuid, MAX(exec_time) FROM command GROUP BY command_name ORDER BY exec_time DESC" | fzf)"
   else
-    xdotool type "$(logbook raw_query --query "SELECT id, command_name, history_id, exit_code, uuid, MAX(exec_time) FROM command GROUP BY command_name ORDER BY exec_time DESC" | fzf)"
+    logbook raw_query --query "SELECT id, command_name, history_id, exit_code, uuid, MAX(exec_time) FROM command GROUP BY command_name ORDER BY exec_time DESC" | fzf | td`` -n "\n" | xsel --clipboard
   fi
 }
 
